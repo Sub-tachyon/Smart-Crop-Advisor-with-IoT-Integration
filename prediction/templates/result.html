@@ -12,25 +12,50 @@
             text-align: center;
             padding: 50px;
         }
-
+        
         .result-container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 60%;
+            width: 80%; 
+            max-width: 900px;
             margin: auto;
         }
-
+        
         h2 {
             color: #007BFF;
         }
-
-        #ai-response {
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-            color: green;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+        }
+        
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        
+        td {
+            text-align: left;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -38,8 +63,32 @@
     <div class="result-container">
         <h1>Prediction Result</h1>
         <h2>Predicted Crop: {{ predicted_crop }}</h2>
-        <div id="ai-response">AI Response: {{ ai_response }}</div>
-        <a href="{% url 'home' %}">Go to Home</a>
+        
+        <h3>AI Recommendation for {{ predicted_crop }}</h3>
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Details</th>
+            </tr>
+            {% for category, detail in ai_response.items %}
+                <tr>
+                    <td>{{ category }}</td>
+                    <td>
+                        {% if detail is list %}
+                            <ul>
+                                {% for item in detail %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ detail }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{% url 'home' %}" class="back-link">Go to Home</a>
     </div>
 </body>
 </html>

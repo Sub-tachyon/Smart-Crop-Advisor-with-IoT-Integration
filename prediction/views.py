@@ -62,22 +62,37 @@ def predict_crop(request):
          
         try:
             response = model_gemini.generate_content(modified_prompt)
-            ai_response = response.text
+            ai_response_text = response.text  # Assuming this is a JSON-like string or can be parsed accordingly
+            
+            # Example structured dictionary based on typical AI response (adjust as necessary)
+            ai_response_dict = {
+                'Pesticide': 'Imidacloprid',
+                'Dosage': '200-300 ppm',
+                'Application Schedule': [
+                    "Apply at planting as a soil drench.",
+                    "Repeat applications every 6 months or as needed to control pests."
+                ],
+                'Water Requirements': [
+                    "Water deeply after application to incorporate the pesticide into the soil.",
+                    "Avoid overwatering, as it can leach the pesticide away from the root zone."
+                ],
+                'Additional Considerations': [
+                    "Amend the soil with organic matter to improve fertility and drainage.",
+                    "Maintain a pH of 6-7."
+                ]
+            }
         except Exception as e:
             print("Error generating AI response:", str(e))
-            # Fallback response
-            ai_response = (
-                f"Based on general agricultural practices, a commonly used pesticide for {crop_name} is Carbaryl (Sevin), "
-                f"which is effective against a wide range of pests. It is recommended to apply 2 kg per hectare during the "
-                f"early growth stage and adjust based on pest pressure. Consult local guidelines for specific pesticide recommendations."
-            )
+            ai_response_dict = {
+                # Default values in case of error
+            }
 
-         
+        # Pass this dictionary to the template
         request.session['predicted_crop'] = crop_name
-        request.session['ai_response'] = ai_response
-
-        
+        request.session['ai_response'] = ai_response_dict  # Ensure this is a dictionary
         return redirect('result_page')
+
+
 
     else:
         return render(request, 'home.html')
