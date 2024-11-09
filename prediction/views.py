@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect
 import joblib
 import json
 import os
+import requests
 import pandas as pd
 import google.generativeai as genai
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from dotenv import load_dotenv   
+from django.http import JsonResponse
 
 
 load_dotenv()
@@ -22,9 +24,9 @@ targets = dict(enumerate(df['label'].astype('category').cat.categories))
 @api_view(['POST'])
 def predict_crop(request):
     if request.method == 'POST':
-        nitrogen = request.POST.get('nitrogen')
-        phosphorus = request.POST.get('phosphorus')
-        potassium = request.POST.get('potassium')
+        nitrogen = request.POST.get('nitrogen') or "20"
+        phosphorus = request.POST.get('phosphorus') or "10"
+        potassium = request.POST.get('potassium') or "15"
         temperature = request.POST.get('temperature')
         humidity = request.POST.get('humidity')
         ph = request.POST.get('ph')
@@ -47,7 +49,7 @@ def predict_crop(request):
         prediction = model.predict(input_data_scaled)
         crop_name = targets[prediction[0]]
  
-        api_key = os.getenv("API_KEY")  # Reads the API key from .env
+        api_key = os.getenv("API_KEY")  
         genai.configure(api_key=api_key)
         model_gemini = genai.GenerativeModel('gemini-pro')
 
@@ -62,9 +64,8 @@ def predict_crop(request):
          
         try:
             response = model_gemini.generate_content(modified_prompt)
-            ai_response_text = response.text  # Assuming this is a JSON-like string or can be parsed accordingly
-            
-            # Example structured dictionary based on typical AI response (adjust as necessary)
+            ai_response_text = response.text  
+           
             ai_response_dict = {
                 'Pesticide': 'Imidacloprid',
                 'Dosage': '200-300 ppm',
@@ -84,12 +85,11 @@ def predict_crop(request):
         except Exception as e:
             print("Error generating AI response:", str(e))
             ai_response_dict = {
-                # Default values in case of error
+                # Default values  
             }
 
-        # Pass this dictionary to the template
         request.session['predicted_crop'] = crop_name
-        request.session['ai_response'] = ai_response_dict  # Ensure this is a dictionary
+        request.session['ai_response'] = ai_response_dict   
         return redirect('result_page')
 
 
@@ -98,7 +98,7 @@ def predict_crop(request):
         return render(request, 'home.html')
 
 def result_page(request):
-    # Retrieve the AI response and predicted crop from the session
+    # Retrieve the AI response and predicted crop from session
     predicted_crop = request.session.get('predicted_crop')
     ai_response = request.session.get('ai_response')
 
@@ -107,3 +107,29 @@ def result_page(request):
 @api_view(['GET'])
 def home(request):
     return render(request, 'home.html')
+
+
+@api_view(['GET'])
+def fetch_iot_data(request):
+    try:
+        
+        esp8266_ip = os.getenv('ESP8266_IP', 'http://localhost:8000/') # Local host by default 
+
+        response = requests.get(esp8266_ip)
+        data = response.json()
+
+        return Response({
+            'nitrogen': data.get('nitrogen'),
+            'phosphorus': data.get('phosphorus'),
+            'potassium': data.get('potassium'),
+            'temperature': data.get('temperature'),
+            'humidity': data.get('humidity'),
+            'ph': data.get('ph'),
+            'rainfall': data.get('rainfall'),
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+def home(request):
+    esp8266_ip = os.getenv('ESP8266_IP', 'http://localhost:8000/') 
+    return render(request, 'home.html', {'esp8266_ip': esp8266_ip})

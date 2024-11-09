@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'prediction',
     'rest_framework',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -70,10 +71,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'Crop_predictor.wsgi.application'
+# WebSocket routing
+ASGI_APPLICATION = 'Crop_predictor.asgi.application'
 
+# Channel Layer Configuration for Redis (assuming Redis is available on localhost)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
